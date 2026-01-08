@@ -1,0 +1,902 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>연애 레인즈 - 개별 루트</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        .animate-pulse {
+            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+        
+        /* 미연시 배경 - 벚꽃 테마 */
+        .visual-novel-bg {
+            background: linear-gradient(to bottom, #ffd1dc 0%, #ffe4e8 50%, #fff0f3 100%);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        /* 떠다니는 벚꽃 효과 */
+        .visual-novel-bg::before {
+            content: '';
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background-image: 
+                radial-gradient(circle, rgba(255, 182, 193, 0.4) 2px, transparent 2px),
+                radial-gradient(circle, rgba(255, 192, 203, 0.3) 3px, transparent 3px),
+                radial-gradient(circle, rgba(255, 182, 193, 0.5) 2px, transparent 2px);
+            background-size: 200px 200px, 300px 300px, 250px 250px;
+            background-position: 0 0, 50px 60px, 130px 270px;
+            animation: sakuraFall 20s linear infinite;
+        }
+        
+        @keyframes sakuraFall {
+            0% { transform: translateY(-100%) rotate(0deg); }
+            100% { transform: translateY(100vh) rotate(360deg); }
+        }
+        
+        /* 부드러운 빛 효과 */
+        .visual-novel-bg::after {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.3) 0%, transparent 70%);
+            animation: lightFloat 8s ease-in-out infinite;
+        }
+        
+        @keyframes lightFloat {
+            0%, 100% { transform: translate(0, 0); }
+            50% { transform: translate(30px, 30px); }
+        }
+        
+        .visual-novel-card {
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(20px);
+            box-shadow: 0 8px 32px rgba(255, 105, 180, 0.3);
+            border: 2px solid rgba(255, 182, 193, 0.3);
+        }
+        
+        .character-border {
+            border: 4px solid;
+            border-image: linear-gradient(135deg, #ff69b4, #ff1493, #ff69b4) 1;
+            box-shadow: 0 0 20px rgba(255, 105, 180, 0.5);
+        }
+        
+        .stat-container {
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .character-select-card {
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .character-select-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(255, 105, 180, 0.4);
+        }
+
+        .cleared-badge {
+            background: linear-gradient(135deg, #ffd700, #ffed4e);
+            box-shadow: 0 2px 10px rgba(255, 215, 0, 0.5);
+        }
+    </style>
+</head>
+<body class="m-0 p-0">
+    <div id="app"></div>
+
+    <script>
+        // ========== 게임 데이터 ==========
+        // 캐릭터 이미지
+        const characterImages = {
+            minsu: 'image/minsu.png',
+            jieun: 'image/jieun.jpg',
+            sujin: 'image/sujin.png',
+            seoyeon: 'image/seoyeon.jpg'
+        };
+
+        // 해피엔딩 전용 이미지
+        const characterHappyImages = {
+            minsu: 'image/minsu.png',
+            jieun: 'image/jieun.jpg',
+            sujin: 'image/sujin.png',
+            seoyeon: 'image/seoyeon.jpg'
+        };
+
+        const characters = [
+            { id: 'minsu', name: '강민서', age: 28, job: '건축가', emoji: '🏗️', color: 'from-blue-500 to-purple-500' },
+            { id: 'jieun', name: '이지은', age: 26, job: '서점 주인', emoji: '📚', color: 'from-green-500 to-teal-500' },
+            { id: 'sujin', name: '박수진', age: 27, job: '마케터', emoji: '💼', color: 'from-purple-500 to-pink-500' },
+            { id: 'seoyeon', name: '정서연', age: 29, job: '의사', emoji: '⚕️', color: 'from-red-500 to-orange-500' }
+        ];
+
+        // 각 캐릭터별 개별 스토리
+        const characterStories = {
+            minsu: [
+                {
+                    week: 1,
+                    situation: '🏗️ 카페에서 민서가 실수로 커피를 엎질렀다\n"죄송해요! 세탁비 드릴게요"',
+                    leftOption: '"괜찮아요" 정중히 거절',
+                    rightOption: '"괜찮아요" 세탁비 받기',
+                    leftEffect: { love: 15, money: -5, confidence: 8 },
+                    rightEffect: { love: 5, money: 10, confidence: 0 }
+                },
+                {
+                    week: 1,
+                    situation: '📱 민서가 문자를 보냈다\n"오늘 뭐 해요? 같이 산책할래요?"',
+                    leftOption: '"좋아요!" 즉시 답장',
+                    rightOption: '"생각해볼게요" 나중에',
+                    leftEffect: { love: 12, energy: -10 },
+                    rightEffect: { love: -5, energy: 5 },
+                    interference: { character: 'sujin', text: '💬 수진에게서 동시에 메시지\n"저녁 같이 먹을래요?"' }
+                },
+                {
+                    week: 2,
+                    situation: '💼 새벽 2시, 민서에게서 문자\n"야근 중... 힘드네요 ㅠ"',
+                    leftOption: '바로 응원 메시지',
+                    rightOption: '자고 아침에 답장',
+                    leftEffect: { love: 15, energy: -15 },
+                    rightEffect: { love: -8, energy: 10 }
+                },
+                {
+                    week: 2,
+                    situation: '🎨 민서가 디자인한 건물 모형을 보여준다\n"당신 생각하며 만들었어요"',
+                    leftOption: '진심으로 칭찬한다',
+                    rightOption: '"괜찮네요" 담백하게',
+                    leftEffect: { love: 20, confidence: -5 },
+                    rightEffect: { love: -10, confidence: 10 },
+                    interference: { character: 'jieun', text: '📚 지은이 전화를 건다\n"지금 시간 있어요?"' }
+                },
+                {
+                    week: 3,
+                    situation: '👨‍👩‍👦 민서가 조심스럽게\n"어머니가 당신을 보고 싶대요"',
+                    leftOption: '"뵙고 싶어요" 적극적',
+                    rightOption: '"아직은 부담돼요"',
+                    leftEffect: { love: 30, money: -15, energy: -20 },
+                    rightEffect: { love: -15, confidence: 5 }
+                },
+                {
+                    week: 3,
+                    situation: '🍽️ 민서가 고급 레스토랑을 예약했다\n통장 잔고가 부족하다',
+                    leftOption: '"제가 낼게요" (허세)',
+                    rightOption: '"...돈이 없어요" (솔직)',
+                    leftEffect: { love: 10, money: -35, confidence: 5 },
+                    rightEffect: { love: -20, confidence: -15 },
+                    interference: { character: 'seoyeon', text: '⚕️ 서연이 우연히 레스토랑에서 만난다\n"여기서 뭐 해요?"' }
+                },
+                {
+                    week: 4,
+                    situation: '💼 민서 친구들이 당신을 무시한다\n"수입이 얼마나 돼요?"\n민서는 방관하고 있다',
+                    leftOption: '참고 웃는다',
+                    rightOption: '"실례네요" 화낸다',
+                    leftEffect: { love: 5, confidence: -25, energy: -15 },
+                    rightEffect: { love: -30, confidence: 15 }
+                },
+                {
+                    week: 4,
+                    situation: '🌹 당신 생일, 민서가 깜짝 파티를 준비했다\n"당신을 위해 준비했어요"',
+                    leftOption: '감동받으며 포옹',
+                    rightOption: '"부담스러워요..."',
+                    leftEffect: { love: 35, confidence: -10 },
+                    rightEffect: { love: -25, confidence: 10 }
+                },
+                {
+                    week: 5,
+                    situation: '✈️ 민서가 복잡한 표정으로\n"1년 해외 프로젝트 제안을 받았어요..."',
+                    leftOption: '"다녀오세요" 희생적',
+                    rightOption: '"저는 어떡해요?" 솔직',
+                    leftEffect: { love: 25, energy: -20 },
+                    rightEffect: { love: -30, confidence: 15 },
+                    interference: { character: 'jieun', text: '📚 지은이 전화\n"어려운 일 있어요... 만나줄래요?"' }
+                },
+                {
+                    week: 6,
+                    situation: '✈️ 출국 D-3\n민서가 진지하게 묻는다\n"같이 갈래요?"',
+                    leftOption: '"함께 갈게요" 동반',
+                    rightOption: '"여기 남을게요"',
+                    leftEffect: { love: 50, money: -40, energy: -30 },
+                    rightEffect: { love: -35, confidence: 20 }
+                }
+            ],
+            jieun: [
+                {
+                    week: 1,
+                    situation: '📚 서점에서 지은이 책을 추천한다\n"이 책, 당신한테 딱이에요"',
+                    leftOption: '기꺼이 산다',
+                    rightOption: '"다음에 볼게요"',
+                    leftEffect: { love: 15, money: -10, energy: 5 },
+                    rightEffect: { love: -8, confidence: 8 }
+                },
+                {
+                    week: 1,
+                    situation: '☕ 지은이 카페에서 시를 쓰고 있다\n"옆에 앉아도 돼요?"',
+                    leftOption: '조용히 옆에 앉는다',
+                    rightOption: '"집중하세요" 배려',
+                    leftEffect: { love: 12, energy: -10 },
+                    rightEffect: { love: 5, energy: 5 },
+                    interference: { character: 'minsu', text: '🏗️ 민서가 우연히 같은 카페에\n당신을 발견하고 다가온다' }
+                },
+                {
+                    week: 2,
+                    situation: '📝 지은이 직접 쓴 시를 보여준다\n"당신 생각하며 썼어요..."',
+                    leftOption: '진지하게 읽어준다',
+                    rightOption: '"나중에 천천히"',
+                    leftEffect: { love: 25, energy: -15 },
+                    rightEffect: { love: -12, energy: 5 }
+                },
+                {
+                    week: 2,
+                    situation: '🌙 밤늦게 지은이 전화한다\n"별 보러 갈래요?"',
+                    leftOption: '피곤하지만 나간다',
+                    rightOption: '"내일은 어때요?"',
+                    leftEffect: { love: 20, energy: -20 },
+                    rightEffect: { love: -8, energy: 10 },
+                    interference: { character: 'sujin', text: '💼 수진의 SNS 스토리\n술집에서 즐거워하는 모습' }
+                },
+                {
+                    week: 3,
+                    situation: '📉 지은의 서점 통장을 봤다\n잔액이 거의 없다',
+                    leftOption: '"도와줄게요" 돈 빌려줌',
+                    rightOption: '"다른 방법 있을 거예요"',
+                    leftEffect: { love: 30, money: -25, confidence: -10 },
+                    rightEffect: { love: -10, confidence: 15 }
+                },
+                {
+                    week: 3,
+                    situation: '🎭 지은이 시 낭송회에 초대한다\n"당신이 와줬으면..."',
+                    leftOption: '꼭 가겠다고 약속',
+                    rightOption: '"생각해볼게요"',
+                    leftEffect: { love: 25, energy: -15 },
+                    rightEffect: { love: -15, energy: 5 },
+                    interference: { character: 'seoyeon', text: '⚕️ 서연이 같은 날 저녁 약속\n"급한 일이 생겼어요"' }
+                },
+                {
+                    week: 4,
+                    situation: '🚪 서점에 "폐업" 안내문\n지은이 눈물을 참는다',
+                    leftOption: '"함께할게요" 동행',
+                    rightOption: '"응원할게요" 거리 둠',
+                    leftEffect: { love: 40, money: -20, energy: -25 },
+                    rightEffect: { love: -10, energy: 10 }
+                },
+                {
+                    week: 4,
+                    situation: '💔 지은이 불안해한다\n"당신... 떠날 거예요?"',
+                    leftOption: '"절대 안 떠나요" 확답',
+                    rightOption: '"왜 그런 생각을?"',
+                    leftEffect: { love: 30, confidence: -15 },
+                    rightEffect: { love: -15, confidence: 10 }
+                },
+                {
+                    week: 5,
+                    situation: '📱 전 여자친구에게서 연락\n"힘들어... 만나줄래?"\n지은이 눈치챘다',
+                    leftOption: '만나지 않는다',
+                    rightOption: '솔직히 말하고 만난다',
+                    leftEffect: { love: 15, confidence: -20 },
+                    rightEffect: { love: -35, confidence: 15 },
+                    interference: { character: 'minsu', text: '🏗️ 민서가 우연히 목격\n오해하는 눈빛' }
+                },
+                {
+                    week: 6,
+                    situation: '📚 북카페 동업 제안\n"함께 시작해요. 당신이 필요해요"',
+                    leftOption: '"같이해요" 동업',
+                    rightOption: '"응원할게요" 거리',
+                    leftEffect: { love: 50, money: -35, energy: -25 },
+                    rightEffect: { love: 5, confidence: 15 }
+                }
+            ],
+            sujin: [
+                {
+                    week: 1,
+                    situation: '💼 매칭 앱에서 수진의 메시지\n"내일 보드게임 카페 ㄱㄱ?"',
+                    leftOption: '"좋아요!" 적극 답장',
+                    rightOption: '"다른 날은?"',
+                    leftEffect: { love: 15, money: -10, energy: -10 },
+                    rightEffect: { love: -8, energy: 10 }
+                },
+                {
+                    week: 1,
+                    situation: '🎮 보드게임 카페에서 수진과 게임 중\n수진이 계속 이긴다',
+                    leftOption: '봐주면서 진다',
+                    rightOption: '진지하게 이긴다',
+                    leftEffect: { love: 10, confidence: -10 },
+                    rightEffect: { love: 15, confidence: 10 },
+                    interference: { character: 'jieun', text: '📚 지은이 SNS에 감성 글\n"외로운 밤..."' }
+                },
+                {
+                    week: 2,
+                    situation: '📱 수진 휴대폰에 전 남친 이름\n계속 답장하고 있다',
+                    leftOption: '"아직도 연락해?" 직접 묻기',
+                    rightOption: '못 본 척 넘어가기',
+                    leftEffect: { love: -5, confidence: 15 },
+                    rightEffect: { love: 8, confidence: -10 }
+                },
+                {
+                    week: 2,
+                    situation: '🎤 수진이 노래방 가자고 한다\n"듀엣 부르고 싶어요!"',
+                    leftOption: '함께 부른다',
+                    rightOption: '"부끄러워요..."',
+                    leftEffect: { love: 20, energy: -15 },
+                    rightEffect: { love: -10, energy: 5 },
+                    interference: { character: 'seoyeon', text: '⚕️ 서연이 전화\n"지금 어디예요?"' }
+                },
+                {
+                    week: 3,
+                    situation: '⏰ 수진이 약속에 1시간 늦었다\n변명도 없이 나타난다',
+                    leftOption: '"괜찮아요" 넘어간다',
+                    rightOption: '"왜 늦었어요?" 따진다',
+                    leftEffect: { love: 5, confidence: -15 },
+                    rightEffect: { love: -10, confidence: 15 }
+                },
+                {
+                    week: 3,
+                    situation: '🎢 놀이공원 데이트\n수진이 무서운 놀이기구를 타자고 한다',
+                    leftOption: '무섭지만 같이 탄다',
+                    rightOption: '"무서워요..." 솔직',
+                    leftEffect: { love: 25, energy: -20 },
+                    rightEffect: { love: -5, energy: 5 },
+                    interference: { character: 'minsu', text: '🏗️ 민서와 마주침\n어색한 분위기' }
+                },
+                {
+                    week: 4,
+                    situation: '💬 수진이 진지하게\n"우리... 사귀는 거 맞아?"',
+                    leftOption: '"당연하죠!" 확답',
+                    rightOption: '"좀 더 지켜봐요"',
+                    leftEffect: { love: 30, confidence: 15 },
+                    rightEffect: { love: -25, energy: 5 }
+                },
+                {
+                    week: 4,
+                    situation: '📸 수진이 SNS에 커플 사진 올리자고\n"우리 사진 올릴게요!"',
+                    leftOption: '"좋아요!" 동의',
+                    rightOption: '"나중에..." 거절',
+                    leftEffect: { love: 25, confidence: 10 },
+                    rightEffect: { love: -20, confidence: -10 }
+                },
+                {
+                    week: 5,
+                    situation: '😢 수진이 고민을 털어놓는다\n"헌신이 무서워요..."',
+                    leftOption: '"기다릴게요" 인내',
+                    rightOption: '"우린 안 맞나봐요"',
+                    leftEffect: { love: 30, energy: -20 },
+                    rightEffect: { love: -40, confidence: 20 },
+                    interference: { character: 'jieun', text: '📚 지은이 위로가 필요하다는 메시지\n"힘든 하루였어요..."' }
+                },
+                {
+                    week: 6,
+                    situation: '✈️ 수진이 제주도 여행을 제안\n"3박4일 같이 가요!"',
+                    leftOption: '함께 간다',
+                    rightOption: '"돈이 부족해요"',
+                    leftEffect: { love: 45, money: -30, energy: -25 },
+                    rightEffect: { love: -30, confidence: -15 }
+                }
+            ],
+            seoyeon: [
+                {
+                    week: 1,
+                    situation: '⚕️ 결혼식장 옆자리 서연\n조용히 대화하다 연락처를 물어본다',
+                    leftOption: '먼저 번호 건넨다',
+                    rightOption: '"인스타 알려드릴게요"',
+                    leftEffect: { love: 15, confidence: 10 },
+                    rightEffect: { love: 8, energy: 5 }
+                },
+                {
+                    week: 1,
+                    situation: '☕ 서연이 커피 약속을 제안\n"제 병원 근처 카페 어때요?"',
+                    leftOption: '바로 약속 잡는다',
+                    rightOption: '"다음 주는 어때요?"',
+                    leftEffect: { love: 12, money: -10 },
+                    rightEffect: { love: -5, energy: 5 },
+                    interference: { character: 'sujin', text: '💼 수진이 같은 시간 약속\n"저녁 먹으러 가요"' }
+                },
+                {
+                    week: 2,
+                    situation: '🏥 서연에게서 전화\n"응급 환자... 약속 취소해도 될까요?"',
+                    leftOption: '"환자가 먼저죠!" 이해',
+                    rightOption: '"또요?" 서운함',
+                    leftEffect: { love: 20, energy: -10 },
+                    rightEffect: { love: -20, confidence: 10 }
+                },
+                {
+                    week: 2,
+                    situation: '🍽️ 서연이 고급 레스토랑을 예약\n"제가 낼게요"',
+                    leftOption: '고맙게 받아들인다',
+                    rightOption: '"반반 내요" 주장',
+                    leftEffect: { love: 10, confidence: -10 },
+                    rightEffect: { love: 15, confidence: 10, money: -15 },
+                    interference: { character: 'minsu', text: '🏗️ 민서가 같은 레스토랑에\n당신을 보고 놀란다' }
+                },
+                {
+                    week: 3,
+                    situation: '👨‍👩‍👧 서연 부모님 만남 제안\n고급 한정식 예약',
+                    leftOption: '만나러 간다',
+                    rightOption: '"부담스러워요" 거절',
+                    leftEffect: { love: 35, money: -20, energy: -25 },
+                    rightEffect: { love: -25, confidence: 15 }
+                },
+                {
+                    week: 3,
+                    situation: '⏰ 서연이 항상 바쁘다\n데이트보다 일이 우선',
+                    leftOption: '이해하고 기다린다',
+                    rightOption: '"시간 좀 내줘요"',
+                    leftEffect: { love: 15, energy: -15 },
+                    rightEffect: { love: -15, confidence: 15 },
+                    interference: { character: 'jieun', text: '📚 지은이 "시간 많이 있어요" 메시지' }
+                },
+                {
+                    week: 4,
+                    situation: '💍 서연이 미래를 꺼낸다\n"결혼도 생각해볼까요?"',
+                    leftOption: '"좋아요" 긍정적',
+                    rightOption: '"아직은 이른 것 같아요"',
+                    leftEffect: { love: 35, confidence: -15 },
+                    rightEffect: { love: -30, confidence: 15 }
+                },
+                {
+                    week: 4,
+                    situation: '🩺 서연의 동료가 당신을 평가한다\n"서연한테 어울리나?"',
+                    leftOption: '참고 웃는다',
+                    rightOption: '당당하게 대응',
+                    leftEffect: { love: 5, confidence: -20 },
+                    rightEffect: { love: 20, confidence: 15 }
+                },
+                {
+                    week: 5,
+                    situation: '🏥 서연이 해외 연수 제안받음\n"6개월간 떨어져 있어야 해요"',
+                    leftOption: '"다녀오세요" 응원',
+                    rightOption: '"안 갔으면..."',
+                    leftEffect: { love: 25, energy: -20 },
+                    rightEffect: { love: -25, confidence: 10 },
+                    interference: { character: 'sujin', text: '💼 수진이 위로 메시지\n"힘들면 연락해요"' }
+                },
+                {
+                    week: 6,
+                    situation: '💍 서연이 프러포즈를 받아달라고\n"평생 함께할 준비 됐어요?"',
+                    leftOption: '"네" 받아들인다',
+                    rightOption: '"시간이 더 필요해요"',
+                    leftEffect: { love: 50, confidence: -15 },
+                    rightEffect: { love: -45, confidence: 20 }
+                }
+            ]
+        };
+
+        const endings = {
+            minsu: {
+                S: { title: '함께 세계를 그리다 ⭐⭐⭐⭐⭐', message: '민서가 해외에서 돌아왔다\n"당신이 있어서 버텼어요"\n\n회사를 그만두고 함께 건축 사무소를 차렸다\n"우리 집을 같이 설계해요"\n\n💍 결혼 엔딩' },
+                A: { title: '장거리의 승리 ⭐⭐⭐⭐', message: '1년의 장거리 연애 성공\n화상통화와 편지로 마음을 이었다\n\n"이제 떠나지 않을게요"\n\n💑 재회 엔딩' },
+                B: { title: '현실적 타협 ⭐⭐⭐', message: '일과 사랑의 균형\n가끔 만나고 서로 존중한다\n\n"완벽하진 않지만 괜찮아요"\n\n🤝 느슨한 관계' },
+                C: { title: '어긋난 타이밍 ⭐⭐', message: '민서는 떠났고 당신은 남았다\n\n"가끔 생각나요"\n\n📱 가끔 연락' },
+                D: { title: '냉정한 결별 ⭐', message: '"우린 안 맞아요"\n\n차갑게 돌아선 민서\n\n💔 완전 이별' }
+            },
+            jieun: {
+                S: { title: '함께 쓰는 이야기 ⭐⭐⭐⭐⭐', message: '북카페를 함께 열었다\n작지만 따뜻한 공간\n\n"당신이 제 가장 아름다운 시예요"\n\n📖 꿈 실현' },
+                A: { title: '그의 뮤즈 ⭐⭐⭐⭐', message: '지은의 첫 시집이 출판됐다\n헌사에 당신의 이름이 있다\n\n"당신이 없었다면 이 책도 없었어요"\n\n✍️ 영감' },
+                B: { title: '각자의 길 ⭐⭐⭐', message: '지은은 출판사에 취직했다\n주말에만 만난다\n\n"그때가 그립긴 해요"\n\n🌿 평범한 연인' },
+                C: { title: '미안한 마음 ⭐⭐', message: '"내가 너무 무거웠죠?"\n\n경제적 부담을 줬다는 지은\n\n😔 죄책감' },
+                D: { title: '상처만 남은 ⭐', message: '"동정이었나봐"\n\n블로그에 당신을 비난하는 시\n\n💢 원망' }
+            },
+            sujin: {
+                S: { title: '자유로운 영혼들 ⭐⭐⭐⭐⭐', message: '함께 세계여행을 떠났다\n계획 없이, 즉흥적으로\n\n"이게 우리 방식이죠"\n\n✈️ 모험' },
+                A: { title: '정착한 자유 ⭐⭐⭐⭐', message: '수진은 헌신을 배웠다\n여전히 자유롭지만 함께\n\n"정착하고 싶어졌어요"\n\n💑 안정' },
+                B: { title: '친구 같은 연인 ⭐⭐⭐', message: '애매하지만 서로 만족한다\n\n"이것도 나쁘지 않잖아요"\n\n😊 애매함' },
+                C: { title: '회피형 이별 ⭐⭐', message: '"아직 준비 안 됐어요"\n\n전 남친과 다시 연락하는 수진\n\n📱 회피' },
+                D: { title: '배신감 ⭐', message: '다른 사람과 있는 수진을 봤다\n\n"착각한 거 아니에요?"\n\n😡 배신' }
+            },
+            seoyeon: {
+                S: { title: '완벽한 파트너 ⭐⭐⭐⭐⭐', message: '프러포즈를 받아들였다\n\n1년 후, 아름다운 결혼식\n"당신과라면 평생도 짧아요"\n\n💍 결혼' },
+                A: { title: '든든한 동반자 ⭐⭐⭐⭐', message: '결혼은 아직이지만 깊은 신뢰\n\n"서두르지 않아도 돼요"\n\n💕 약혼급' },
+                B: { title: '현실적 연인 ⭐⭐⭐', message: '속도가 안 맞지만 관계 유지\n\n"천천히 맞춰가봐요"\n\n⏰ 조율중' },
+                C: { title: '시간 부족 ⭐⭐', message: '바쁜 병원 스케줄\n\n"미안해요. 난 일도 사랑도 놓칠 수 없어요"\n\n📅 소멸' },
+                D: { title: '차가운 거절 ⭐', message: '"시간 낭비했네요"\n\n차단당했다\n\n🚫 차단' }
+            }
+        };
+
+        // ========== 게임 상태 ==========
+        let gameState = {
+            phase: 'start',
+            selectedCharacter: null,
+            stats: { money: 50, energy: 50, confidence: 50 },
+            love: 50,
+            currentCard: 0,
+            week: 1,
+            clearedCharacters: []
+        };
+
+        // ========== 유틸리티 함수 ==========
+        function getLoveEmoji(value) {
+            if (value >= 80) return '❤️❤️❤️❤️❤️';
+            if (value >= 60) return '❤️❤️❤️❤️🤍';
+            if (value >= 40) return '❤️❤️❤️🤍🤍';
+            if (value >= 20) return '❤️❤️🤍🤍🤍';
+            return '❤️🤍🤍🤍🤍';
+        }
+
+        function getLoveGrade(value) {
+            if (value >= 80) return 'S';
+            if (value >= 60) return 'A';
+            if (value >= 40) return 'B';
+            if (value >= 20) return 'C';
+            return 'D';
+        }
+
+        function checkGameOver(newStats, newLove) {
+            if (newLove >= 100) {
+                const ending = endings[gameState.selectedCharacter]['S'];
+                gameState.endingType = ending.title;
+                gameState.endingMessage = ending.message;
+                gameState.phase = 'ending';
+                if (!gameState.clearedCharacters.includes(gameState.selectedCharacter)) {
+                    gameState.clearedCharacters.push(gameState.selectedCharacter);
+                }
+                return true;
+            }
+            if (newLove <= 0) {
+                const char = characters.find(c => c.id === gameState.selectedCharacter);
+                gameState.endingType = `${char.name}에게 차였어요 💔`;
+                gameState.endingMessage = `"다신 연락하지 마세요"\n\n${char.name}이(가) 당신을 차단했다`;
+                gameState.phase = 'ending';
+                return true;
+            }
+            if (newStats.money <= 0) {
+                gameState.endingType = '파산했어요 💸';
+                gameState.endingMessage = '데이트 비용을 감당할 수 없다\n\n"미안... 당분간 못 만날 것 같아"\n\n카드 대금이 밀렸다';
+                gameState.phase = 'ending';
+                return true;
+            }
+            if (newStats.energy <= 0) {
+                gameState.endingType = '번아웃 😵';
+                gameState.endingMessage = '너무 바쁘게 살다 쓰러졌다\n\n병원 침대에서 눈을 뜬다\n\n"쉬는 게 좋겠어요"';
+                gameState.phase = 'ending';
+                return true;
+            }
+            if (newStats.confidence <= 0) {
+                gameState.endingType = '자존감 붕괴 😢';
+                gameState.endingMessage = '너무 비굴하게 굴었다\n\n"당신, 좀 한심해 보여요"\n\n사랑에 자신을 잃었다';
+                gameState.phase = 'ending';
+                return true;
+            }
+            if (newStats.confidence >= 100) {
+                gameState.endingType = '오만해져서 차임 😤';
+                gameState.endingMessage = '너무 당당해져서 건방졌다\n\n"왜 네 말을 들어야 해?"\n\n"이렇게 변할 줄 몰랐어요"';
+                gameState.phase = 'ending';
+                return true;
+            }
+            return false;
+        }
+
+        function applyEffect(effect) {
+            const newStats = {
+                money: Math.max(0, Math.min(100, gameState.stats.money + (effect.money || 0))),
+                energy: Math.max(0, Math.min(100, gameState.stats.energy + (effect.energy || 0))),
+                confidence: Math.max(0, Math.min(100, gameState.stats.confidence + (effect.confidence || 0)))
+            };
+            const newLove = Math.max(0, Math.min(100, gameState.love + (effect.love || 0)));
+            gameState.stats = newStats;
+            gameState.love = newLove;
+            if (!checkGameOver(newStats, newLove)) {
+                const stories = characterStories[gameState.selectedCharacter];
+                if (gameState.currentCard < stories.length - 1) {
+                    gameState.currentCard++;
+                    const nextWeek = Math.floor(gameState.currentCard / 2) + 1;
+                    if (nextWeek > gameState.week) {
+                        gameState.week = nextWeek;
+                    }
+                } else {
+                    const grade = getLoveGrade(newLove);
+                    const ending = endings[gameState.selectedCharacter][grade];
+                    gameState.endingType = ending.title;
+                    gameState.endingMessage = ending.message;
+                    gameState.phase = 'ending';
+                    if (!gameState.clearedCharacters.includes(gameState.selectedCharacter)) {
+                        gameState.clearedCharacters.push(gameState.selectedCharacter);
+                    }
+                }
+            }
+            render();
+        }
+
+        function handleSwipe(direction) {
+            const stories = characterStories[gameState.selectedCharacter];
+            const card = stories[gameState.currentCard];
+            const effect = direction === 'left' ? card.leftEffect : card.rightEffect;
+            applyEffect(effect);
+        }
+
+        function startGame() {
+            gameState.phase = 'character-select';
+            render();
+        }
+
+        function selectCharacter(charId) {
+            gameState.selectedCharacter = charId;
+            gameState.phase = 'playing';
+            gameState.stats = { money: 50, energy: 50, confidence: 50 };
+            gameState.love = 50;
+            gameState.currentCard = 0;
+            gameState.week = 1;
+            render();
+        }
+
+        function backToCharacterSelect() {
+            gameState.phase = 'character-select';
+            gameState.selectedCharacter = null;
+            render();
+        }
+
+        function restartGame() {
+            gameState = {
+                phase: 'start',
+                selectedCharacter: null,
+                stats: { money: 50, energy: 50, confidence: 50 },
+                love: 50,
+                currentCard: 0,
+                week: 1,
+                clearedCharacters: gameState.clearedCharacters
+            };
+            render();
+        }
+
+        // ========== 렌더링 함수 ==========
+        function render() {
+            const app = document.getElementById('app');
+            if (gameState.phase === 'start') {
+                app.innerHTML = renderStartScreen();
+            } else if (gameState.phase === 'character-select') {
+                app.innerHTML = renderCharacterSelect();
+            } else if (gameState.phase === 'playing') {
+                app.innerHTML = renderGameScreen();
+            } else if (gameState.phase === 'ending') {
+                app.innerHTML = renderEndingScreen();
+            }
+        }
+
+        function renderStartScreen() {
+            return `
+                <div class="min-h-screen bg-gradient-to-br from-purple-600 via-pink-500 to-red-400 flex items-center justify-center p-4">
+                    <div class="bg-white rounded-3xl shadow-2xl p-8 max-w-md w-full text-center">
+                        <h1 class="text-4xl font-bold mb-2 bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+                            연애 레인즈
+                        </h1>
+                        <p class="text-gray-600 mb-8">당신의 선택이 사랑을 결정합니다</p>
+                        <div class="mb-6 p-4 bg-gradient-to-br from-pink-50 to-purple-50 rounded-xl">
+                            <h2 class="text-xl font-bold mb-4">4명의 여성 캐릭터</h2>
+                            <div class="space-y-3">
+                                ${characters.map(char => `
+                                    <div class="flex items-center gap-3 bg-white rounded-lg p-3 shadow-sm hover:shadow-md transition-all">
+                                        <div class="w-16 h-16 rounded-full bg-gradient-to-br ${char.color} flex items-center justify-center overflow-hidden flex-shrink-0">
+                                            <img src="${characterImages[char.id]}" alt="${char.name}" class="w-full h-full object-cover" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+                                            <span class="text-3xl" style="display:none;">${char.emoji}</span>
+                                        </div>
+                                        <div class="text-left">
+                                            <div class="font-semibold">${char.name}</div>
+                                            <div class="text-sm text-gray-600">${char.age}세 · ${char.job}</div>
+                                        </div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                        <button onclick="startGame()" class="w-full bg-gradient-to-r from-purple-500 to-pink-500 text-white py-4 rounded-xl font-semibold text-lg hover:from-purple-600 hover:to-pink-600 transition-all shadow-lg">
+                            게임 시작
+                        </button>
+                        <div class="mt-6 p-4 bg-gray-50 rounded-xl">
+                            <p class="text-sm text-gray-600 mb-2">⚠️ 게임 규칙</p>
+                            <p class="text-xs text-gray-500">
+                                캐릭터 선택 → 개별 스토리 진행<br/>
+                                👈 왼쪽 = 적극적/희생적 선택<br/>
+                                👉 오른쪽 = 소극적/보존적 선택
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderCharacterSelect() {
+            return `
+                <div class="min-h-screen visual-novel-bg flex items-center justify-center p-4">
+                    <div class="max-w-4xl w-full" style="position: relative; z-index: 1;">
+                        <h1 class="text-4xl font-bold text-center mb-8 text-white" style="text-shadow: 2px 2px 4px rgba(0,0,0,0.3)">
+                            누구와 연애할까요?
+                        </h1>
+                        <div class="grid md:grid-cols-2 gap-6 mb-6">
+                            ${characters.map(char => {
+                                const isCleared = gameState.clearedCharacters.includes(char.id);
+                                return `
+                                    <div onclick="selectCharacter('${char.id}')" class="character-select-card visual-novel-card rounded-2xl p-6 relative">
+                                        ${isCleared ? `<div class="absolute top-3 right-3 cleared-badge text-xs px-3 py-1 rounded-full font-bold text-gray-800">✓ CLEAR</div>` : ''}
+                                        <div class="w-32 h-32 mx-auto mb-4 rounded-2xl bg-gradient-to-br ${char.color} flex items-center justify-center overflow-hidden shadow-lg border-4 border-white">
+                                            <img src="${characterImages[char.id]}" alt="${char.name}" class="w-full h-full object-cover" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+                                            <span class="text-6xl" style="display:none;">${char.emoji}</span>
+                                        </div>
+                                        <div class="text-center mb-4">
+                                            <h2 class="text-2xl font-bold bg-gradient-to-r ${char.color} bg-clip-text text-transparent mb-1">${char.name}</h2>
+                                            <p class="text-gray-600">${char.age}세 · ${char.job}</p>
+                                        </div>
+                                        <p class="text-gray-600 text-sm mb-4 text-center">${getCharacterDescription(char.id)}</p>
+                                        <div class="bg-gradient-to-r ${char.color} text-white py-2 rounded-lg text-center font-semibold">이 루트 시작하기</div>
+                                    </div>
+                                `;
+                            }).join('')}
+                        </div>
+                        ${gameState.clearedCharacters.length > 0 ? `<div class="text-center text-white mb-4" style="text-shadow: 1px 1px 2px rgba(0,0,0,0.3)">클리어: ${gameState.clearedCharacters.length} / ${characters.length}</div>` : ''}
+                        <div class="text-center">
+                            <button onclick="restartGame()" class="bg-white bg-opacity-20 text-white px-6 py-2 rounded-lg hover:bg-opacity-30 transition-all border border-white border-opacity-50">처음으로</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function getCharacterDescription(charId) {
+            const descriptions = {
+                minsu: '프로젝트에 열정적인 건축가. 때로 일에 치이지만 당신을 위한 시간은 만들어냅니다.',
+                jieun: '감성적이고 섬세한 서점 주인. 작은 서점을 운영하며 시를 쓰는 낭만적인 영혼.',
+                sujin: '자유분방하고 활발한 마케터. 즉흥적이고 재미있지만 헌신은 조금 두려워합니다.',
+                seoyeon: '차분하고 이성적인 의사. 바쁜 일정 속에서도 당신에게 진지하게 다가옵니다.'
+            };
+            return descriptions[charId];
+        }
+
+        function renderGameScreen() {
+            const stories = characterStories[gameState.selectedCharacter];
+            const card = stories[gameState.currentCard];
+            const character = characters.find(c => c.id === gameState.selectedCharacter);
+            return `
+                <div class="min-h-screen visual-novel-bg flex items-center justify-center p-4 transition-all duration-500">
+                    <div class="max-w-md w-full" style="position: relative; z-index: 1;">
+                        <div class="stat-container rounded-xl p-4 mb-4">
+                            <div class="flex items-center justify-between mb-3">
+                                <div class="text-white font-bold text-shadow" style="text-shadow: 2px 2px 4px rgba(0,0,0,0.3)">Week ${gameState.week}</div>
+                                <div class="text-white text-sm font-semibold">${character.emoji} ${character.name} 루트</div>
+                            </div>
+                            <div class="mb-3">
+                                <div class="flex items-center justify-between mb-1">
+                                    <span class="text-white font-semibold text-sm" style="text-shadow: 1px 1px 2px rgba(0,0,0,0.3)">💖 호감도</span>
+                                    <span class="text-xs">${getLoveEmoji(gameState.love)}</span>
+                                </div>
+                                <div class="bg-white bg-opacity-30 rounded-full h-3 shadow-inner">
+                                    <div class="h-3 rounded-full transition-all duration-300 ${gameState.love < 20 || gameState.love > 80 ? 'animate-pulse' : ''}" style="width: ${gameState.love}%; background: ${gameState.love < 20 ? '#ef4444' : gameState.love > 80 ? 'linear-gradient(to right, #ff1493, #ff69b4)' : 'linear-gradient(to right, #ec4899, #f472b6)'}"></div>
+                                </div>
+                            </div>
+                            ${renderStatBar('💰', gameState.stats.money, '#eab308')}
+                            ${renderStatBar('⚡', gameState.stats.energy, '#3b82f6')}
+                            ${renderStatBar('🎭', gameState.stats.confidence, '#a855f7')}
+                        </div>
+                        <div class="visual-novel-card rounded-3xl shadow-2xl p-8">
+                            <div class="text-center mb-6">
+                                <div class="w-32 h-32 mx-auto mb-4 rounded-full character-border bg-gradient-to-br ${character.color} flex items-center justify-center overflow-hidden">
+                                    <img src="${characterImages[character.id]}" alt="${character.name}" class="w-full h-full object-cover" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+                                    <span class="text-6xl" style="display:none;">${character.emoji}</span>
+                                </div>
+                                <h2 class="text-2xl font-bold bg-gradient-to-r ${character.color} bg-clip-text text-transparent">${character.name}</h2>
+                                <p class="text-gray-600">${character.age}세 · ${character.job}</p>
+                                <div class="mt-2">${getLoveEmoji(gameState.love)}</div>
+                            </div>
+                            <div class="bg-gradient-to-br from-purple-50 to-pink-50 rounded-2xl p-6 mb-4 min-h-32 flex items-center justify-center border-2 border-purple-200">
+                                <p class="text-gray-800 text-base text-center whitespace-pre-line leading-relaxed font-medium">${card.situation}</p>
+                            </div>
+                            ${card.interference ? `
+                                <div class="bg-red-50 border-2 border-red-200 rounded-xl p-4 mb-4">
+                                    <div class="flex items-start gap-2">
+                                        <span class="text-2xl">${characters.find(c => c.id === card.interference.character).emoji}</span>
+                                        <div>
+                                            <div class="font-bold text-red-600 text-sm mb-1">방해 이벤트!</div>
+                                            <p class="text-sm text-gray-700">${card.interference.text}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            ` : ''}
+                            <div class="flex gap-4 mb-4">
+                                <button onclick="handleSwipe('left')" class="flex-1 bg-gradient-to-r from-blue-500 to-blue-600 text-white py-4 rounded-xl font-semibold hover:from-blue-600 hover:to-blue-700 transition-all shadow-md">👈 ${card.leftOption}</button>
+                                <button onclick="handleSwipe('right')" class="flex-1 bg-gradient-to-r from-pink-500 to-pink-600 text-white py-4 rounded-xl font-semibold hover:from-pink-600 hover:to-pink-700 transition-all shadow-md">${card.rightOption} 👉</button>
+                            </div>
+                            <p class="text-center text-gray-400 text-sm mb-2">좌우로 스와이프하거나 버튼을 클릭하세요</p>
+                            <div class="text-center text-gray-500 text-xs">카드 ${gameState.currentCard + 1} / ${stories.length}</div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderEndingScreen() {
+            const character = characters.find(c => c.id === gameState.selectedCharacter);
+            const grade = getLoveGrade(gameState.love);
+            const isHappyEnding = grade === 'S';
+            return `
+                <div class="min-h-screen bg-gradient-to-br from-gray-800 to-gray-900 flex items-center justify-center p-4">
+                    <div class="bg-white rounded-3xl shadow-2xl p-8 max-w-md w-full text-center">
+                        ${isHappyEnding ? `
+                            <div class="mb-6">
+                                <div class="w-64 h-64 mx-auto mb-4 rounded-3xl bg-gradient-to-br ${character.color} flex items-center justify-center overflow-hidden shadow-2xl border-4 border-yellow-400 relative">
+                                    <img src="${characterHappyImages[character.id]}" alt="${character.name} Happy Ending" class="w-full h-full object-cover" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+                                    <span class="text-9xl" style="display:none;">${character.emoji}</span>
+                                    <div class="absolute inset-0 bg-gradient-to-tr from-transparent via-white to-transparent opacity-20 animate-pulse"></div>
+                                    <div class="absolute top-2 right-2 text-3xl animate-bounce">💖</div>
+                                    <div class="absolute bottom-2 left-2 text-3xl animate-bounce" style="animation-delay: 0.3s;">💕</div>
+                                </div>
+                                <div class="flex items-center justify-center gap-2 mb-2">
+                                    <span class="text-3xl">✨</span>
+                                    <h2 class="text-2xl font-bold bg-gradient-to-r ${character.color} bg-clip-text text-transparent">${character.name}</h2>
+                                    <span class="text-3xl">✨</span>
+                                </div>
+                                <div class="inline-block bg-gradient-to-r from-yellow-400 to-orange-400 text-white px-4 py-1 rounded-full text-sm font-bold shadow-lg">🏆 HAPPY ENDING 🏆</div>
+                            </div>
+                        ` : `
+                            <div class="mb-4">
+                                <div class="w-24 h-24 mx-auto mb-3 rounded-full bg-gradient-to-br ${character.color} flex items-center justify-center text-5xl overflow-hidden">
+                                    <img src="${characterImages[character.id]}" alt="${character.name}" class="w-full h-full object-cover" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+                                    <span style="display:none;">${character.emoji}</span>
+                                </div>
+                                <h2 class="text-xl font-bold bg-gradient-to-r ${character.color} bg-clip-text text-transparent mb-2">${character.name} 루트</h2>
+                            </div>
+                        `}
+                        <h1 class="text-3xl font-bold mb-4">${gameState.endingType}</h1>
+                        <p class="text-gray-600 mb-6 whitespace-pre-line">${gameState.endingMessage}</p>
+                        <p class="text-sm text-gray-500 mb-6">Week ${gameState.week} 까지 진행</p>
+                        <div class="mb-6 p-4 bg-gray-50 rounded-xl">
+                            <h3 class="font-semibold mb-3 text-left">최종 결과</h3>
+                            <div class="mb-3 text-left">
+                                <div class="flex items-center justify-between mb-1">
+                                    <span class="text-sm">💖 최종 호감도</span>
+                                    <span class="text-xs">${getLoveEmoji(gameState.love)}</span>
+                                </div>
+                                <div class="bg-gray-200 rounded-full h-2">
+                                    <div class="bg-gradient-to-r from-pink-500 to-red-500 h-2 rounded-full transition-all" style="width: ${gameState.love}%"></div>
+                                </div>
+                                <div class="text-xs text-gray-500 mt-1">${gameState.love}점 (${getLoveGrade(gameState.love)}급)</div>
+                            </div>
+                            <div class="mt-4 pt-4 border-t">
+                                <h3 class="font-semibold mb-2 text-left">최종 스탯</h3>
+                                ${renderStatBar('💰', gameState.stats.money, '#eab308')}
+                                ${renderStatBar('⚡', gameState.stats.energy, '#3b82f6')}
+                                ${renderStatBar('🎭', gameState.stats.confidence, '#a855f7')}
+                            </div>
+                        </div>
+                        <div class="space-y-3">
+                            <button onclick="backToCharacterSelect()" class="w-full bg-gradient-to-r from-purple-500 to-pink-500 text-white py-3 rounded-xl font-semibold hover:from-purple-600 hover:to-pink-600 transition-all">다른 캐릭터 선택</button>
+                            <button onclick="selectCharacter('${gameState.selectedCharacter}')" class="w-full bg-gradient-to-r from-blue-500 to-blue-600 text-white py-3 rounded-xl font-semibold hover:from-blue-600 hover:to-blue-700 transition-all">${character.name} 다시 도전</button>
+                            <button onclick="restartGame()" class="w-full bg-gray-500 text-white py-3 rounded-xl font-semibold hover:bg-gray-600 transition-all">처음부터</button>
+                        </div>
+                        ${gameState.clearedCharacters.length > 0 ? `
+                            <div class="mt-6 p-3 bg-gradient-to-r from-yellow-50 to-orange-50 rounded-lg border border-yellow-200">
+                                <p class="text-sm font-semibold text-gray-700 mb-2">🏆 클리어 현황: ${gameState.clearedCharacters.length} / ${characters.length}</p>
+                                <div class="flex justify-center gap-2">
+                                    ${characters.map(c => `<span class="text-2xl ${gameState.clearedCharacters.includes(c.id) ? '' : 'opacity-30'}">${c.emoji}</span>`).join('')}
+                                </div>
+                            </div>
+                        ` : ''}
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderStatBar(icon, value, color) {
+            return `
+                <div class="flex items-center gap-2 mb-2">
+                    <span class="text-lg drop-shadow">${icon}</span>
+                    <div class="flex-1 bg-white bg-opacity-30 rounded-full h-3 shadow-inner">
+                        <div class="h-3 rounded-full transition-all duration-300 ${value < 20 || value > 80 ? 'animate-pulse' : ''}" style="width: ${value}%; background: ${value < 20 || value > 80 ? '#ef4444' : color}; box-shadow: 0 2px 4px rgba(0,0,0,0.2);"></div>
+                    </div>
+                    <span class="text-white font-bold text-sm w-10 text-right drop-shadow" style="text-shadow: 1px 1px 2px rgba(0,0,0,0.3)">${value}</span>
+                </div>
+            `;
+        }
+
+        window.startGame = startGame;
+        window.selectCharacter = selectCharacter;
+        window.backToCharacterSelect = backToCharacterSelect;
+        window.restartGame = restartGame;
+        window.handleSwipe = handleSwipe;
+        render();
+    </script>
+</body>
+</html>
